@@ -1,10 +1,52 @@
 const { BedrockPortal, Joinability, Modules } = require('bedrock-portal');
 const { Authflow, Titles } = require('prismarine-auth');
 const { RealmAPI } = require('prismarine-realms');
+// const botCredentials = require("./bot_credentials.json");
+const fs = require('fs')
+
+class FileCacheB {
+  constructor (cacheLocation) {
+    this.cacheLocation = cacheLocation
+  }
+
+  async reset () {
+    const cached = {}
+    fs.writeFileSync(this.cacheLocation, JSON.stringify(cached))
+    return cached
+  }
+
+  async loadInitialValue () {
+    try {
+      return JSON.parse(fs.readFileSync(this.cacheLocation, 'utf8'))
+    } catch (e) {
+      return this.reset()
+    }
+  }
+
+  async getCached () {
+    if (this.cache === undefined) {
+      this.cache = await this.loadInitialValue()
+    }
+
+    return this.cache
+  }
+
+  async setCached (cached) {
+    this.cache = cached
+    fs.writeFileSync(this.cacheLocation, JSON.stringify(this.cache))
+  }
+
+  async setCachedPartial (cached) {
+    await this.setCached({
+      ...this.cache,
+      ...cached
+    })
+  }
+}
 
 const main = async () => {
     console.log('terpyFTPConnect auth next')
-    const auth = new Authflow('terpyFTPConnect', './', { authTitle: Titles.MinecraftNintendoSwitch, deviceType: 'Nintendo', flow: 'live' });
+    const auth = new Authflow("terpyFTPConnect"/* botCredentials.email */, './', { authTitle: Titles.MinecraftNintendoSwitch, deviceType: 'Nintendo', flow: 'live'/* , password: botCredentials.password */ });
     // await api.getRealms().then(console.log);
 
     const portal = new BedrockPortal(auth, {
@@ -24,9 +66,17 @@ const main = async () => {
     });
 
     await portal.start();
+    let checkRun = 0n;
+    /**
+     * @type {{id: string, checkRun: bigint}[]}
+     */
+    let recentJoiners = [];
     portal.on("playerJoin", p=>{
+      if(!recentJoiners.includes(p.profile.xuid)){
+        recentJoiners.push({id: p.profile.xuid, checkRun});
+      }
       // Debugging
-      console.log(`${p.profile.displayName} (${p.profile.gamertag}) just joined.`);
+      console.log(`${p.profile.displayName} (${p.profile.gamertag}) <${p.profile.xuid}> just joined.`);
     }); /* 
     portal.use(Modules.RedirectFromRealm, {
         // The client options to use when connecting to the Realm.
@@ -76,11 +126,16 @@ const main = async () => {
     // await portal.host.connect();
     console.log('terpyFTP auth next')
     const terpyAuth = new Authflow('terpyFTP', './', { authTitle: Titles.MinecraftNintendoSwitch, deviceType: 'Nintendo', flow: 'live' });
-    setInterval(async ()=>{
+    (async ()=>{
+      checkRun++;
       try{
         const players = (await RealmAPI.from(terpyAuth, 'bedrock').getRealm("21577514")).players.filter(p=>p.online === true);
         players.forEach(async p=>{
           try{
+            if(recentJoiners.findIndex(v=>v.id === p.uuid) !== -1){
+              recentJoiners.splice(recentJoiners.findIndex(v=>v.id === p.uuid), 1);
+              return;
+            }
             await portal.host.rest.addXboxFriend(p.uuid);
             await portal.invitePlayer(p.uuid);
             const pxbl = await portal.host.rest.getProfile(p.uuid);
@@ -93,6 +148,31 @@ const main = async () => {
       }catch(e){
         console.error(e, e.stack);
       }
+      recentJoiners = recentJoiners.filter(j=>j.checkRun>=checkRun);
+    })();
+    setInterval(async ()=>{
+      checkRun++;
+      try{
+        const players = (await RealmAPI.from(terpyAuth, 'bedrock').getRealm("21577514")).players.filter(p=>p.online === true);
+        players.forEach(async p=>{
+          try{
+            if(recentJoiners.findIndex(v=>v.id === p.uuid) !== -1){
+              recentJoiners.splice(recentJoiners.findIndex(v=>v.id === p.uuid), 1);
+              return;
+            }
+            await portal.host.rest.addXboxFriend(p.uuid);
+            await portal.invitePlayer(p.uuid);
+            const pxbl = await portal.host.rest.getProfile(p.uuid);
+            // Debugging
+            console.log(`Successfully friended and invited ${pxbl.displayName} (${pxbl.gamertag}) <${p.uuid}>.`)
+          }catch(e){
+            console.error(e, e.stack);
+          }
+        });
+      }catch(e){
+        console.error(e, e.stack);
+      }
+      recentJoiners = recentJoiners.filter(j=>j.checkRun>=checkRun);
     }, 60000);
     // console.log(await portal.host.rest.get("https://frontend.realms.minecraft-services.net/api/v1.0/worlds/21577514/stories/playeractivity"))
     // await portal.host.rest.addXboxFriend((await portal.host.rest.getProfile("magikjames1890")).xuid);
