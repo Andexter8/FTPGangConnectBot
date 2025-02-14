@@ -4,9 +4,7 @@ const { RealmAPI } = require('prismarine-realms');
 
 const main = async () => {
     console.log('terpyFTPConnect auth next')
-    const auth = new Authflow('terpyFTPConnect', './', { authTitle: Titles.MinecraftNintendoSwitch, deviceType: 'Nintendo', flow: 'live' });
-    console.log('terpyFTP auth next')
-    const terpyAuth = new Authflow('terpyFTP', './', { authTitle: Titles.MinecraftNintendoSwitch, deviceType: 'Nintendo', flow: 'live' });
+    const auth = new Authflow('terpyFTPConnect', './', { authTitle: Titles.MinecraftIOS, deviceType: 'iOS', flow: 'live' });
     // await api.getRealms().then(console.log);
 
     const portal = new BedrockPortal(auth, {
@@ -76,6 +74,8 @@ const main = async () => {
     // accepts a player's gamertag or xuid
     //   await portal.invitePlayer('Andexter8')
     // await portal.host.connect();
+    console.log('terpyFTP auth next')
+    const terpyAuth = new Authflow('terpyFTP', './', { authTitle: Titles.MinecraftNintendoSwitch, deviceType: 'Nintendo', flow: 'live' });
     setInterval(async ()=>{
       try{
         const players = (await RealmAPI.from(terpyAuth, 'bedrock').getRealm("21577514")).players.filter(p=>p.online === true);
