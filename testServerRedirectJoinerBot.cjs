@@ -4,7 +4,7 @@ const { RealmAPI } = require('prismarine-realms');
 
 const main = async () => {
     console.log('terpyFTPConnect auth next')
-    const auth = new Authflow('terpyFTPConnect', './', { authTitle: Titles.MinecraftIOS, deviceType: 'iOS', flow: 'live' });
+    const auth = new Authflow('terpyFTPConnect', './', { authTitle: Titles.MinecraftNintendoSwitch, deviceType: 'Nintendo', flow: 'live' });
     // await api.getRealms().then(console.log);
 
     const portal = new BedrockPortal(auth, {
