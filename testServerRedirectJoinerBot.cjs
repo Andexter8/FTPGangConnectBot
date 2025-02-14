@@ -3,7 +3,9 @@ const { Authflow, Titles } = require('prismarine-auth');
 const { RealmAPI } = require('prismarine-realms');
 
 const main = async () => {
+    console.log('terpyFTPConnect auth next')
     const auth = new Authflow('terpyFTPConnect', './', { authTitle: Titles.MinecraftNintendoSwitch, deviceType: 'Nintendo', flow: 'live' });
+    console.log('terpyFTP auth next')
     const terpyAuth = new Authflow('terpyFTP', './', { authTitle: Titles.MinecraftNintendoSwitch, deviceType: 'Nintendo', flow: 'live' });
     // await api.getRealms().then(console.log);
 
