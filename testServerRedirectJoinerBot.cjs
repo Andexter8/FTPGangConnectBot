@@ -5,7 +5,6 @@ const { RealmAPI } = require('prismarine-realms');
 const main = async () => {
     const auth = new Authflow('terpyFTPConnect', './', { authTitle: Titles.MinecraftNintendoSwitch, deviceType: 'Nintendo', flow: 'live' });
     const terpyAuth = new Authflow('terpyFTP', './', { authTitle: Titles.MinecraftNintendoSwitch, deviceType: 'Nintendo', flow: 'live' });
-    const api = RealmAPI.from(terpyAuth, 'bedrock');
     // await api.getRealms().then(console.log);
 
     const portal = new BedrockPortal(auth, {
@@ -77,18 +76,22 @@ const main = async () => {
     // await portal.host.connect();
     setInterval(async ()=>{
       try{
-        const players = (await api.getRealm("21577514")).players.filter(p=>p.online === true);
+        const players = (await RealmAPI.from(terpyAuth, 'bedrock').getRealm("21577514")).players.filter(p=>p.online === true);
         players.forEach(async p=>{
-          await portal.host.rest.addXboxFriend(p.uuid);
-          await portal.invitePlayer(p.uuid);
-          const pxbl = await portal.host.rest.getProfile(p.uuid);
-          // Debugging
-          console.log(`Successfully friended and invited ${pxbl.displayName} (${pxbl.gamertag}).`)
+          try{
+            await portal.host.rest.addXboxFriend(p.uuid);
+            await portal.invitePlayer(p.uuid);
+            const pxbl = await portal.host.rest.getProfile(p.uuid);
+            // Debugging
+            console.log(`Successfully friended and invited ${pxbl.displayName} (${pxbl.gamertag}).`)
+          }catch(e){
+            console.error(e, e.stack);
+          }
         });
       }catch(e){
         console.error(e, e.stack);
       }
-    }, 20000);
+    }, 60000);
     // console.log(await portal.host.rest.get("https://frontend.realms.minecraft-services.net/api/v1.0/worlds/21577514/stories/playeractivity"))
     // await portal.host.rest.addXboxFriend((await portal.host.rest.getProfile("magikjames1890")).xuid);
     // await portal.invitePlayer('magikjames1890');
