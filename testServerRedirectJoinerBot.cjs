@@ -45,7 +45,7 @@ class FileCacheB {
 }
 
 const main = async () => {
-    console.log('terpyFTPConnect auth next')
+    console.log('terpyFTPConnect auth next');
     const auth = new Authflow("terpyFTPConnect"/* botCredentials.email */, './', { authTitle: Titles.MinecraftNintendoSwitch, deviceType: 'Nintendo', flow: 'live'/* , password: botCredentials.password */ });
     // await api.getRealms().then(console.log);
 
@@ -124,9 +124,10 @@ const main = async () => {
     // accepts a player's gamertag or xuid
     //   await portal.invitePlayer('Andexter8')
     // await portal.host.connect();
-    console.log('terpyFTP auth next')
+    console.log('terpyFTP auth next');
+    // await portal.host.rest.removeXboxFriend((await portal.host.rest.getProfile("Andexter8")).xuid);
     const terpyAuth = new Authflow('terpyFTP', './', { authTitle: Titles.MinecraftNintendoSwitch, deviceType: 'Nintendo', flow: 'live' });
-    (async ()=>{
+    const callbackForInvitingPeopleOnRealm = (async ()=>{
       checkRun++;
       try{
         const players = (await RealmAPI.from(terpyAuth, 'bedrock').getRealm("21577514")).players.filter(p=>p.online === true);
@@ -136,35 +137,22 @@ const main = async () => {
               recentJoiners.splice(recentJoiners.findIndex(v=>v.id === p.uuid), 1);
               return;
             }
-            await portal.host.rest.addXboxFriend(p.uuid);
-            await portal.invitePlayer(p.uuid);
             const pxbl = await portal.host.rest.getProfile(p.uuid);
-            // Debugging
-            console.log(`Successfully friended and invited ${pxbl.displayName} (${pxbl.gamertag}).`)
-          }catch(e){
-            console.error(e, e.stack);
-          }
-        });
-      }catch(e){
-        console.error(e, e.stack);
-      }
-      recentJoiners = recentJoiners.filter(j=>j.checkRun>=checkRun);
-    })();
-    setInterval(async ()=>{
-      checkRun++;
-      try{
-        const players = (await RealmAPI.from(terpyAuth, 'bedrock').getRealm("21577514")).players.filter(p=>p.online === true);
-        players.forEach(async p=>{
-          try{
-            if(recentJoiners.findIndex(v=>v.id === p.uuid) !== -1){
-              recentJoiners.splice(recentJoiners.findIndex(v=>v.id === p.uuid), 1);
-              return;
+            if(pxbl.isFollowedByCaller){
+              // Debugging
+              console.log(`Already friended ${pxbl.displayName} (${pxbl.gamertag}).`)
+            }else{
+              try{
+                await portal.host.rest.addXboxFriend(p.uuid);
+              }catch(e){
+                console.error(e, e.stack);
+              }
+              // Debugging
+              console.log(`Successfully friended ${pxbl.displayName} (${pxbl.gamertag}).`)
             }
-            await portal.host.rest.addXboxFriend(p.uuid);
             await portal.invitePlayer(p.uuid);
-            const pxbl = await portal.host.rest.getProfile(p.uuid);
             // Debugging
-            console.log(`Successfully friended and invited ${pxbl.displayName} (${pxbl.gamertag}) <${p.uuid}>.`)
+            console.log(`Successfully invited ${pxbl.displayName} (${pxbl.gamertag}).`)
           }catch(e){
             console.error(e, e.stack);
           }
@@ -173,7 +161,9 @@ const main = async () => {
         console.error(e, e.stack);
       }
       recentJoiners = recentJoiners.filter(j=>j.checkRun>=checkRun);
-    }, 60000);
+    });
+    setInterval(callbackForInvitingPeopleOnRealm, 15000);
+    callbackForInvitingPeopleOnRealm();
     // console.log(await portal.host.rest.get("https://frontend.realms.minecraft-services.net/api/v1.0/worlds/21577514/stories/playeractivity"))
     // await portal.host.rest.addXboxFriend((await portal.host.rest.getProfile("magikjames1890")).xuid);
     // await portal.invitePlayer('magikjames1890');
